@@ -8,11 +8,6 @@ function createServiceError(statusCode, code, message) {
   return error;
 }
 
-function toPublicDocument(document) {
-  const { storagePath, ...publicDocument } = document;
-  return publicDocument;
-}
-
 async function createDocument(file) {
   if (!file) {
     throw createServiceError(400, 'FILE_REQUIRED', 'Envie um arquivo no campo file.');
@@ -43,14 +38,12 @@ async function createDocument(file) {
     throw createServiceError(500, 'STORAGE_ERROR', 'Não foi possível armazenar os metadados.');
   }
 
-  return toPublicDocument(document);
+  return document;
 }
 
 async function listDocuments() {
   const documents = await documentsRepository.findAll();
-  return documents
-    .sort((first, second) => second.uploadedAt.localeCompare(first.uploadedAt))
-    .map(toPublicDocument);
+  return documents.sort((first, second) => second.uploadedAt.localeCompare(first.uploadedAt));
 }
 
 async function getDocumentForDownload(id) {
