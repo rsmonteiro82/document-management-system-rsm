@@ -1,5 +1,6 @@
 const express = require('express');
 const multer = require('multer');
+const { rateLimit } = require('express-rate-limit');
 const crypto = require('node:crypto');
 const path = require('node:path');
 const fs = require('node:fs');
@@ -24,23 +25,11 @@ const repository = new DocumentsRepository();
 const service = new DocumentsService({ repository });
 const controller = new DocumentsController(service);
 const router = express.Router();
-const downloadRequests = new Map();
-
-function limitDownloads(req, res, next) {
-  const now = Date.now();
-  const windowStart = now - 60_000;
-  const requests = (downloadRequests.get(req.ip) || []).filter(
-    (timestamp) => timestamp > windowStart,
-  );
-
-  if (requests.length >= 60) {
-    return res.status(429).json({ error: 'Limite de downloads excedido' });
-  }
-
-  requests.push(now);
-  downloadRequests.set(req.ip, requests);
-  return next();
-}
+const limitDownloads = rateLimit({
+  windowMs: 60_000,
+  limit: 60,
+  message: { error: 'Limite de downloads excedido' },
+});
 
 router.post('/upload', upload.single('file'), controller.upload);
 router.get('/documents', controller.list);
